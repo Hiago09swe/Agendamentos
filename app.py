@@ -3,94 +3,81 @@ import pandas as pd
 import os
 from datetime import datetime
 
-# CONFIGURAÇÃO DE TEMA (Forçando modo claro no conteúdo)
-st.set_page_config(page_title="Controle de Instalações", layout="centered")
+# 1. Configuração de Página e Tema
+st.set_page_config(page_title="Gestão de Instalações", layout="centered")
 
-# CSS INJETADO - FOCO NO CONTRASTE
+# 2. CSS "Blindado" (Resolve o problema do fundo branco/texto invisível)
 st.markdown("""
     <style>
-    /* Fundo da página */
-    .stApp { background-color: #E8F0F7; }
+    /* Força o fundo da página para um cinza muito claro */
+    .stApp {
+        background-color: #f4f7f9 !important;
+    }
     
-    /* Estilo do Card de Agendamento */
-    .agendamento-card {
-        background-color: #FFFFFF !important;
-        border-left: 10px solid #004A99 !important;
-        padding: 20px !important;
-        border-radius: 12px !important;
+    /* Card de Agendamento - Cores Fixas */
+    .card-container {
+        background-color: #ffffff !important;
+        border-radius: 15px !important;
+        padding: 25px !important;
         margin-bottom: 20px !important;
-        box-shadow: 0px 4px 12px rgba(0,0,0,0.15) !important;
+        border-left: 12px solid #004A99 !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
+        color: #222222 !important; /* Texto sempre escuro */
     }
     
-    /* Forçar cores de texto dentro do card */
-    .card-title { color: #004A99 !important; font-size: 20px !important; font-weight: bold !important; margin-bottom: 5px; }
-    .card-text { color: #333333 !important; font-size: 16px !important; margin: 5px 0; }
-    .card-label { color: #666666 !important; font-weight: bold; }
+    /* Estilização dos textos internos do card */
+    .card-date { color: #004A99 !important; font-size: 1.2em !important; font-weight: bold !important; }
+    .card-title { color: #111111 !important; font-size: 1.3em !important; font-weight: 800 !important; margin: 10px 0 !important; }
+    .card-info { color: #444444 !important; font-size: 1em !important; line-height: 1.6 !important; }
+    .card-label { font-weight: bold; color: #000000; }
     
-    /* Botões */
+    /* Botões personalizados */
     .stButton>button {
-        background-color: #004A99;
-        color: white;
-        font-weight: bold;
-        border-radius: 8px;
-        border: none;
+        background-color: #004A99 !important;
+        color: white !important;
+        border-radius: 10px !important;
+        border: none !important;
+        font-weight: bold !important;
+        width: 100%;
     }
+    
+    /* Títulos da página */
+    h1, h2, h3 { color: #004A99 !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# LÓGICA DE DADOS
-def carregar_dados():
+# 3. Gerenciamento de Dados
+def load_data():
     if os.path.exists("agendamentos.csv"):
         return pd.read_csv("agendamentos.csv")
     return pd.DataFrame(columns=["ID", "Data", "Placa", "Local", "Cliente", "Tecnico"])
 
-df = carregar_dados()
+df = load_data()
 
-# CABEÇALHO
-col1, col2 = st.columns([1, 4])
-with col1:
+# 4. Cabeçalho
+col_logo, col_titulo = st.columns([1, 3])
+with col_logo:
+    # Ajustado para o nome do arquivo que você confirmou
     if os.path.exists("logo_empresa.png"):
         st.image("logo_empresa.png", width=120)
-with col2:
-    st.title("Painel de Agendamentos")
+with col_titulo:
+    st.title("Painel de Controle")
 
-# FORMULÁRIO (Simplificado para evitar erros)
-with st.expander("➕ Adicionar Novo", expanded=False):
-    with st.form("add_form"):
-        d = st.date_input("Data")
-        h = st.time_input("Hora")
-        v = st.text_input("Veículo/Placa")
-        c = st.text_input("Cliente")
-        l = st.text_area("Local/Endereço")
-        t = st.text_input("Técnico")
-        if st.form_submit_button("AGENDAR"):
-            new_id = datetime.now().strftime("%H%M%S")
-            data_f = f"{d.strftime('%d/%m/%Y')} às {h.strftime('%H:%M')}"
-            nova_linha = pd.DataFrame([[new_id, data_f, v, l, c, t]], columns=df.columns)
+# 5. Cadastro (Formulário)
+with st.expander("➕ Adicionar Novo Agendamento", expanded=False):
+    with st.form("form_novo"):
+        c1, c2 = st.columns(2)
+        data_sel = c1.date_input("Data")
+        hora_sel = c2.time_input("Hora")
+        veiculo = st.text_input("Veículo/Placa")
+        cliente = st.text_input("Cliente/Empresa")
+        tecnico = st.text_input("Técnico Responsável")
+        local = st.text_area("Endereço Completo")
+        
+        if st.form_submit_button("SALVAR NO SISTEMA"):
+            new_id = datetime.now().strftime("%Y%m%d%H%M%S")
+            data_str = f"{data_sel.strftime('%d/%m/%Y')} às {hora_sel.strftime('%H:%M')}"
+            nova_linha = pd.DataFrame([[new_id, data_str, veiculo, local, cliente, tecnico]], columns=df.columns)
             df = pd.concat([df, nova_linha], ignore_index=True)
             df.to_csv("agendamentos.csv", index=False)
-            st.rerun()
-
-st.write("---")
-
-# LISTAGEM MELHORADA
-if not df.empty:
-    for i, linha in df.iterrows():
-        # HTML PURO PARA O CARD (Para não herdar cores erradas do Streamlit)
-        st.markdown(f"""
-            <div class="agendamento-card">
-                <div class="card-title">📅 {linha['Data']}</div>
-                <div class="card-text"><b>VEÍCULO:</b> {linha['Placa']}</div>
-                <div class="card-text"><b>CLIENTE:</b> {linha['Cliente']}</div>
-                <div class="card-text"><b>TÉCNICO:</b> {linha['Tecnico']}</div>
-                <div style="color: #555; font-size: 14px; margin-top: 10px;">📍 {linha['Local']}</div>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        # Botão de conclusão
-        if st.button(f"CONCLUIR {linha['Placa']}", key=str(linha['ID'])):
-            df = df.drop(i)
-            df.to_csv("agendamentos.csv", index=False)
-            st.rerun()
-else:
-    st.info("Nenhum serviço pendente.")
+            st.success
