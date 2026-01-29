@@ -58,23 +58,47 @@ with st.expander("📝 Novo Registro", expanded=False):
 
 st.divider()
 
-# 6. Lista de Agendamentos
+# 6. Lista de Agendamentos (Interface Corrigida)
 st.subheader("🗓️ Próximos Serviços")
 
 if not df.empty:
     for i, linha in df.iterrows():
         with st.container():
+            # Card com fundo branco sólido e texto escuro para visibilidade total
             st.markdown(f"""
-            <div style="border-left: 5px solid #0056b3; padding: 10px; background: white; margin-bottom: 10px; border-radius: 5px;">
-                <b>{linha['Data']}</b> - {linha['Placa']}<br>
-                <small>{linha['Cliente']} | {linha['Tecnico']}</small><br>
-                <small>📍 {linha['Local']}</small>
+            <div style="
+                border-left: 8px solid #0056b3; 
+                padding: 20px; 
+                background-color: #ffffff; 
+                margin-bottom: 5px; 
+                border-radius: 10px; 
+                box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+                color: #1a1a1a !important;
+            ">
+                <div style="font-size: 1.1em; font-weight: bold; color: #0056b3; margin-bottom: 5px;">
+                    🕒 {linha['Data']}
+                </div>
+                <div style="font-size: 1.2em; font-weight: bold; margin-bottom: 8px;">
+                    🚗 {linha['Placa']}
+                </div>
+                <div style="margin-bottom: 5px;">
+                    <b>👤 Cliente:</b> {linha['Cliente']}
+                </div>
+                <div style="margin-bottom: 5px;">
+                    <b>🔧 Técnico:</b> {linha['Tecnico']}
+                </div>
+                <div style="font-size: 0.9em; line-height: 1.4; color: #444;">
+                    📍 {linha['Local']}
+                </div>
             </div>
             """, unsafe_allow_html=True)
             
-            if st.button(f"Concluir {linha['Placa']}", key=str(linha['ID'])):
+            # Botão centralizado logo abaixo do card
+            if st.button(f"✅ Concluir {linha['Placa']}", key=str(linha['ID'])):
                 df = df.drop(i)
                 df.to_csv("agendamentos.csv", index=False)
                 st.rerun()
+            st.markdown("---") # Linha de separação entre agendamentos
 else:
-    st.write("Nenhum agendamento pendente.")
+    st.info("Tudo limpo! Nenhum agendamento pendente.")
+
